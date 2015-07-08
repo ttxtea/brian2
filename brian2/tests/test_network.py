@@ -3,7 +3,7 @@ import copy
 import logging
 
 import numpy as np
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import assert_equal, assert_raises, assert_allclose
 from nose import with_setup
 from nose.plugins.attrib import attr
 
@@ -933,6 +933,17 @@ def test_magic_scope():
     assert objs2=={'G3', 'G4'}
 
 
+@attr('standalone-compatible')
+@with_setup(teardown=restore_initial_state)
+def test_changing_dt():
+    defaultclock.dt = 1*ms
+    G = NeuronGroup(1, 'v:1')
+    mon = StateMonitor(G, 'v', record=True)
+    run(10*ms)
+    defaultclock.dt = 10*ms
+    run(20*ms)
+    assert_allclose(mon.t[:], np.concatenate([np.arange(10), [10, 20]])*ms)
+
 if __name__=='__main__':
     for t in [
             test_incorrect_network_use,
@@ -976,6 +987,7 @@ if __name__=='__main__':
             test_profile,
             test_profile_ipython_html,
             test_magic_scope,
+            test_changing_dt
             ]:
         t()
         restore_initial_state()
