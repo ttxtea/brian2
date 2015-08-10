@@ -201,18 +201,20 @@ libraries: {self.libraries}
             
     def compile(self):
         CodeObject.compile(self)
-        if hasattr(self.code, 'python_pre'):
-            self.compiled_python_pre = compile(self.code.python_pre, '(string)', 'exec')
+        if hasattr(self.code, 'python_before_main'):
+            self.compiled_python_before_main = compile(self.code.python_before_main,
+                                                       '(string)', 'exec')
         else:
-            self.compiled_python_pre = None
-        if hasattr(self.code, 'python_post'):
-            self.compiled_python_post = compile(self.code.python_post, '(string)', 'exec')
+            self.compiled_python_before_main = None
+        if hasattr(self.code, 'python_after_main'):
+            self.compiled_python_after_main = compile(self.code.python_before_main,
+                                                      '(string)', 'exec')
         else:
-            self.compiled_python_post = None
+            self.compiled_python_after_main = None
 
     def run(self):
-        if self.compiled_python_pre is not None:
-            exec self.compiled_python_pre in self.python_code_namespace
+        if self.compiled_python_before_main is not None:
+            exec self.compiled_python_before_main in self.python_code_namespace
         with std_silent(self._done_first_run):
             ret_val = weave.inline(self.annotated_code, self.namespace.keys(),
                                    local_dict=self.namespace,
@@ -227,8 +229,8 @@ libraries: {self.libraries}
                                    library_dirs=self.library_dirs,
                                    verbose=0)
         self._done_first_run = True
-        if self.compiled_python_post is not None:
-            exec self.compiled_python_post in self.python_code_namespace
+        if self.compiled_python_after_main is not None:
+            exec self.compiled_python_after_main in self.python_code_namespace
         return ret_val
 
 if weave is not None:
