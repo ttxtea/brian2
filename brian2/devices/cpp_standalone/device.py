@@ -435,14 +435,16 @@ class CPPStandaloneDevice(Device):
         else:
             template_kwds = dict(template_kwds)
         template_kwds['user_headers'] = prefs['codegen.cpp.headers']
-        codeobj = super(CPPStandaloneDevice, self).code_object(owner, name, abstract_code, variables,
-                                                               template_name, variable_indices,
-                                                               codeobj_class=codeobj_class,
-                                                               template_kwds=template_kwds,
-                                                               override_conditional_write=override_conditional_write,
-                                                               )
-        self.code_objects[codeobj.name] = codeobj
-        return codeobj
+        codeobjects = super(CPPStandaloneDevice, self).code_object(owner, name, abstract_code, variables,
+                                                                   template_name, variable_indices,
+                                                                   codeobj_class=codeobj_class,
+                                                                   template_kwds=template_kwds,
+                                                                   override_conditional_write=override_conditional_write,
+                                                                   )
+        for codeobj in codeobjects:
+            if codeobj is not None:
+                self.code_objects[codeobj.name] = codeobj
+        return codeobjects
     
     def check_openmp_compatible(self, nb_threads):
         if nb_threads > 0:

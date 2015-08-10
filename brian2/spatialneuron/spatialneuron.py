@@ -403,22 +403,11 @@ class SpatialStateUpdater(CodeRunner, Group):
         self._prepare_codeobj = None
 
     def before_run(self, run_namespace=None, level=0):
-        # execute code to initalize the data structures
-        if self._prepare_codeobj is None:
-            self._prepare_codeobj = create_runner_codeobj(self.group,
-                                                          '', # no code,
-                                                          'spatialneuron_prepare',
-                                                          name=self.name+'_spatialneuron_prepare',
-                                                          check_units=False,
-                                                          additional_variables=self.variables,
-                                                          run_namespace=run_namespace,
-                                                          level=level+1)
-        self._prepare_codeobj()
+        super(SpatialStateUpdater, self).before_run(run_namespace=run_namespace,
+                                                    level=level+1)
         # Raise a warning if the slow pure numpy version is used
-        # For simplicity, we check which CodeObject class the _prepare_codeobj
-        # is using, this will be the same as the main state updater
         from brian2.codegen.runtime.numpy_rt.numpy_rt import NumpyCodeObject
-        if isinstance(self._prepare_codeobj, NumpyCodeObject):
+        if isinstance(self.codeobj, NumpyCodeObject):
             # If numpy is used, raise a warning if scipy is not present
             try:
                 import scipy
@@ -428,7 +417,6 @@ class SpatialStateUpdater(CodeRunner, Group):
                              'switch to a different code generation target '
                              '(e.g. weave or cython) or install scipy.'),
                             once=True)
-        CodeRunner.before_run(self, run_namespace, level=level + 1)
 
     def _pre_calc_iteration(self, morphology, counter=0):
         self._temp_morph_i[counter] = morphology.index + 1

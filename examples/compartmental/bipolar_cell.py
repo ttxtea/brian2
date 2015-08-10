@@ -2,7 +2,7 @@
 A pseudo MSO neuron, with two dendrites and one axon (fake geometry).
 '''
 from brian2 import *
-
+prefs.codegen.target = 'cython'
 # Morphology
 morpho = Soma(30*um)
 morpho.axon = Cylinder(diameter=1*um, length=300*um, n=100)
@@ -27,20 +27,21 @@ mon_soma = StateMonitor(neuron, 'v', record=[0])
 mon_L = StateMonitor(neuron.L, 'v', record=True)
 mon_R = StateMonitor(neuron, 'v', record=morpho.R[75*um])
 
-run(1*ms)
-neuron.I[morpho.L[50*um]] = 0.2*nA  # injecting in the left dendrite
-run(5*ms)
-neuron.I = 0*amp
-run(50*ms, report='text')
-
-subplot(211)
-plot(mon_L.t/ms, mon_soma[0].v/mV, 'k')
-plot(mon_L.t/ms, mon_L[morpho.L[50*um]].v/mV, 'r')
-plot(mon_L.t/ms, mon_R[morpho.R[75*um]].v/mV, 'b')
-ylabel('v (mV)')
-subplot(212)
-for x in linspace(0*um, 100*um, 10, endpoint=False):
-    plot(mon_L.t/ms, mon_L[morpho.L[x]].v/mV)
-xlabel('Time (ms)')
-ylabel('v (mV)')
-show()
+run(1*ms, report='text')
+# print profiling_summary()
+# neuron.I[morpho.L[50*um]] = 0.2*nA  # injecting in the left dendrite
+# run(5*ms, report='text')
+# neuron.I = 0*amp
+# run(50*ms, report='text')
+#
+# subplot(211)
+# plot(mon_L.t/ms, mon_soma[0].v/mV, 'k')
+# plot(mon_L.t/ms, mon_L[morpho.L[50*um]].v/mV, 'r')
+# plot(mon_L.t/ms, mon_R[morpho.R[75*um]].v/mV, 'b')
+# ylabel('v (mV)')
+# subplot(212)
+# for x in linspace(0*um, 100*um, 10, endpoint=False):
+#     plot(mon_L.t/ms, mon_L[morpho.L[x]].v/mV)
+# xlabel('Time (ms)')
+# ylabel('v (mV)')
+# show()

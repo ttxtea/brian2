@@ -100,14 +100,17 @@ class WeaveCodeObject(CodeObject):
         self.runtime_library_dirs = list(prefs['codegen.cpp.runtime_library_dirs'])
         self.libraries = list(prefs['codegen.cpp.libraries'])
         self.headers = ['<algorithm>', '<limits>'] + prefs['codegen.cpp.headers']
-        self.annotated_code = self.code.main+'''
+        self.code = code
+        self.main_code = getattr(self.code, 'main', self.code)
+        self.support_code = getattr(self.code, 'support_code', None)
+        self.annotated_code = self.main_code + '''
 /*
 The following code is just compiler options for the call to weave.inline.
 By including them here, we force a recompile if the compiler options change,
 which is a good thing (e.g. switching -ffast-math on and off).
 
 support_code:
-{self.code.support_code}
+{self.support_code}
 
 compiler: {self.compiler}
 define_macros: {self.define_macros}
@@ -198,7 +201,7 @@ libraries: {self.libraries}
         # update the values of the non-constant values in the namespace
         for name, func in self.nonconstant_values:
             self.namespace[name] = func()
-            
+
     def compile(self):
         CodeObject.compile(self)
         if hasattr(self.code, 'python_before_main'):
@@ -218,7 +221,7 @@ libraries: {self.libraries}
         with std_silent(self._done_first_run):
             ret_val = weave.inline(self.annotated_code, self.namespace.keys(),
                                    local_dict=self.namespace,
-                                   support_code=self.code.support_code,
+                                   support_code=self.support_code,
                                    compiler=self.compiler,
                                    headers=self.headers,
                                    define_macros=self.define_macros,

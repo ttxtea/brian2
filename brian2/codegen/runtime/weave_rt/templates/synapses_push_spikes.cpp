@@ -1,3 +1,7 @@
+{% macro before_run() %}
+PyObject_CallMethod(_owner, "initialise_queue", NULL);
+{% endmacro %}
+
 {% macro main() %}
 {% endmacro %}
 

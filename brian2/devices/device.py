@@ -280,12 +280,35 @@ class Device(object):
                         **template_kwds)
         logger.debug('%s code:\n%s' % (name, indent(code_representation(code))))
 
+        before_run_code = getattr(code, 'before_run', None)
+        if before_run_code is not None:
+            before_run_codeobj = codeobj_class(owner, before_run_code, variables,
+                                               variable_indices,
+                                               template_name=template_name,
+                                               template_source=template.template_source,
+                                               name=name)
+            before_run_codeobj.compile()
+        else:
+            before_run_codeobj = None
+
         codeobj = codeobj_class(owner, code, variables, variable_indices,
                                 template_name=template_name,
                                 template_source=template.template_source,
                                 name=name)
         codeobj.compile()
-        return codeobj
+
+        after_run_code = getattr(code, 'after_run', None)
+        if after_run_code is not None:
+            after_run_codeobj = codeobj_class(owner, after_run_code, variables,
+                                              variable_indices,
+                                              template_name=template_name,
+                                              template_source=template.template_source,
+                                              name=name)
+            after_run_codeobj.compile()
+        else:
+            after_run_codeobj = None
+
+        return before_run_codeobj, codeobj, after_run_codeobj
     
     def activate(self):
         '''

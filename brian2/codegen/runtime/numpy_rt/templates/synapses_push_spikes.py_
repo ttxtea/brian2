@@ -1,1 +1,7 @@
+{% macro before_run() %}
+_owner.initialise_queue()
+{% endmacro %}
+
+{%  macro main() %}
 _owner.push_spikes()
+{% endmacro %}

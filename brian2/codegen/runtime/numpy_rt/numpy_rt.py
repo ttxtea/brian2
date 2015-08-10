@@ -47,7 +47,11 @@ class NumpyCodeObject(CodeObject):
         self.namespace = {'_owner': owner,
                           # TODO: This should maybe go somewhere else
                           'logical_not': np.logical_not}
-        CodeObject.__init__(self, owner, code, variables, variable_indices,
+        self.code = code
+        self.main_code = getattr(code, 'main', code)
+        self.compiled_code = None
+        CodeObject.__init__(self, owner, self.main_code,
+                            variables, variable_indices,
                             template_name, template_source, name=name)
         self.variables_to_namespace()
 
@@ -109,8 +113,7 @@ class NumpyCodeObject(CodeObject):
             self.namespace[name] = func()
 
     def compile(self):
-        super(NumpyCodeObject, self).compile()
-        self.compiled_code = compile(self.code, '(string)', 'exec')
+        self.compiled_code = compile(self.main_code, '(string)', 'exec')
 
     def run(self):
         exec self.compiled_code in self.namespace

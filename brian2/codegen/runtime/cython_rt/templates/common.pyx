@@ -2,7 +2,7 @@
 #cython: wraparound=False
 #cython: cdivision=False
 #cython: infer_types=True
-
+{% macro preamble() %}
 import numpy as _numpy
 cimport numpy as _numpy
 from libc.math cimport sin, cos, tan, sinh, cosh, tanh, exp, log, log10, sqrt, abs, asin, acos, atan, fabs, fmod, floor, ceil
@@ -15,7 +15,10 @@ cdef extern from "stdint_compat.h":
     # Actual compile time size used for conversion
     ctypedef signed int int32_t
     ctypedef signed long int64_t
+{% endmacro %}
 
+{% macro main() %}
+{{ preamble() }}
 # support code
 {{ support_code | autoindent }}
 
@@ -32,3 +35,5 @@ def main(_namespace):
     {% block maincode %}
     {{ vector_code | autoindent }}
     {% endblock %}
+
+{% endmacro %}

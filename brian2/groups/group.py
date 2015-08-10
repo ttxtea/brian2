@@ -251,13 +251,13 @@ class IndexWrapper(object):
                              additional_variables=variables,
                              level=1)
             from brian2.devices.device import get_default_codeobject_class
-            codeobj = create_runner_codeobj(self.group,
-                                            abstract_code,
-                                            'group_get_indices',
-                                            additional_variables=variables,
-                                            level=1,
-                                            codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
-                                            )
+            _, codeobj, _ = create_runner_codeobj(self.group,
+                                                  abstract_code,
+                                                  'group_get_indices',
+                                                  additional_variables=variables,
+                                                  level=1,
+                                                  codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
+                                                  )
             return codeobj()
         else:
             return self.indices(item)
@@ -949,7 +949,9 @@ class CodeRunner(BrianObject):
         if codeobj_class is None:
             codeobj_class = group.codeobj_class
         self.codeobj_class = codeobj_class
+        self.before_run_codeobj = None
         self.codeobj = None
+        self.after_run_codeobj = None
 
     def update_abstract_code(self, run_namespace=None, level=0):
         '''
@@ -962,24 +964,36 @@ class CodeRunner(BrianObject):
         pass
 
     def before_run(self, run_namespace=None, level=0):
+        super(CodeRunner, self).before_run(run_namespace=run_namespace,
+                                           level=level+1)
         self.update_abstract_code(run_namespace=run_namespace, level=level+1)
         # If the CodeRunner has variables, add them
         if hasattr(self, 'variables'):
             additional_variables = self.variables
         else:
             additional_variables = None
-        self.codeobj = create_runner_codeobj(group=self.group,
-                                             code=self.abstract_code,
-                                             user_code=self.user_code,
-                                             template_name=self.template,
-                                             name=self.name+'_codeobject*',
-                                             check_units=self.check_units,
-                                             additional_variables=additional_variables,
-                                             needed_variables=self.needed_variables,
-                                             run_namespace=run_namespace,
-                                             level=level+1,
-                                             template_kwds=self.template_kwds,
-                                             override_conditional_write=self.override_conditional_write,
-                                             codeobj_class=self.codeobj_class
-                                             )
+        codeobjects = create_runner_codeobj(group=self.group,
+                                            code=self.abstract_code,
+                                            user_code=self.user_code,
+                                            template_name=self.template,
+                                            name=self.name+'_codeobject*',
+                                            check_units=self.check_units,
+                                            additional_variables=additional_variables,
+                                            needed_variables=self.needed_variables,
+                                            run_namespace=run_namespace,
+                                            level=level+1,
+                                            template_kwds=self.template_kwds,
+                                            override_conditional_write=self.override_conditional_write,
+                                            codeobj_class=self.codeobj_class
+                                            )
+        self.before_run_codeobj, self.codeobj, self.after_run_codeobj = codeobjects
         self.code_objects[:] = [weakref.proxy(self.codeobj)]
+
+        # Run the before run code (if any)
+        if self.before_run_codeobj is not None:
+            self.before_run_codeobj()
+
+    def after_run(self):
+        super(CodeRunner, self).after_run()
+        if self.after_run_codeobj is not None:
+            self.after_run_codeobj()

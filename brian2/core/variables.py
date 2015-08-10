@@ -1021,14 +1021,14 @@ class VariableView(object):
         # array for situations where iterate_all could be used
         from brian2.codegen.codeobject import create_runner_codeobj
         from brian2.devices.device import get_default_codeobject_class
-        codeobj = create_runner_codeobj(self.group,
-                                        abstract_code,
-                                        'group_variable_set',
-                                        additional_variables=variables,
-                                        check_units=check_units,
-                                        level=level+2,
-                                        run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
+        _, codeobj, _ = create_runner_codeobj(self.group,
+                                              abstract_code,
+                                              'group_variable_set',
+                                              additional_variables=variables,
+                                              check_units=check_units,
+                                              level=level+2,
+                                              run_namespace=run_namespace,
+                                              codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
         codeobj()
 
     @device_override('variableview_set_with_expression_conditional')
@@ -1072,15 +1072,15 @@ class VariableView(object):
         # TODO: Have an additional argument to avoid going through the index
         # array for situations where iterate_all could be used
         from brian2.devices.device import get_default_codeobject_class
-        codeobj = create_runner_codeobj(self.group,
-                                        {'condition': abstract_code_cond,
-                                         'statement': abstract_code},
-                                        'group_variable_set_conditional',
-                                        additional_variables=variables,
-                                        check_units=check_units,
-                                        level=level+2,
-                                        run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
+        _, codeobj, _ = create_runner_codeobj(self.group,
+                                              {'condition': abstract_code_cond,
+                                               'statement': abstract_code},
+                                              'group_variable_set_conditional',
+                                              additional_variables=variables,
+                                              check_units=check_units,
+                                              level=level+2,
+                                              run_namespace=run_namespace,
+                                              codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
         codeobj()
 
     @device_override('variableview_get_with_expression')
@@ -1126,14 +1126,14 @@ class VariableView(object):
                          level=level+2,
                          run_namespace=run_namespace)
         from brian2.devices.device import get_default_codeobject_class
-        codeobj = create_runner_codeobj(self.group,
-                                        abstract_code,
-                                        'group_variable_get_conditional',
-                                        additional_variables=variables,
-                                        level=level+2,
-                                        run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
-                                        )
+        _, codeobj, _ = create_runner_codeobj(self.group,
+                                              abstract_code,
+                                              'group_variable_get_conditional',
+                                              additional_variables=variables,
+                                              level=level+2,
+                                              run_namespace=run_namespace,
+                                              codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
+                                              )
         return codeobj()
 
     @device_override('variableview_get_with_index_array')
@@ -1189,20 +1189,20 @@ class VariableView(object):
         abstract_code = '_variable = ' + self.name + '\n'
         from brian2.codegen.codeobject import create_runner_codeobj
         from brian2.devices.device import get_default_codeobject_class
-        codeobj = create_runner_codeobj(self.group,
-                                        abstract_code,
-                                        'group_variable_get',
-                                        # Setting the user code to an empty
-                                        # string suppresses warnings if the
-                                        # subexpression refers to variable
-                                        # names that are also present in the
-                                        # local namespace
-                                        user_code='',
-                                        needed_variables=['_group_idx'],
-                                        additional_variables=variables,
-                                        level=level+2,
-                                        run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
+        _, codeobj, _ = create_runner_codeobj(self.group,
+                                              abstract_code,
+                                              'group_variable_get',
+                                              # Setting the user code to an empty
+                                              # string suppresses warnings if the
+                                              # subexpression refers to variable
+                                              # names that are also present in the
+                                              # local namespace
+                                              user_code='',
+                                              needed_variables=['_group_idx'],
+                                              additional_variables=variables,
+                                              level=level+2,
+                                              run_namespace=run_namespace,
+                                              codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
         )
         result = codeobj()
         if single_index and not variable.scalar:

@@ -86,7 +86,10 @@ class CythonCodeObject(NumpyCodeObject):
 
 
     def compile(self):
-        self.compiled_code = cython_extension_manager.create_extension(self.code,
+        if not isinstance(self.main_code, basestring):
+            pass
+
+        self.compiled_code = cython_extension_manager.create_extension(self.main_code,
                                                                        libraries=self.libraries,
                                                                        extra_compile_args=self.extra_compile_args,
                                                                        extra_link_args=self.extra_link_args,

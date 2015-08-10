@@ -143,8 +143,9 @@ class SynapticPathway(CodeRunner, Group):
         if objname is None:
             objname = prepost + '*'
 
-        CodeRunner.__init__(self, synapses,
-                            'synapses',
+        CodeRunner.__init__(self,
+                            group=synapses,
+                            template='synapses',
                             code=code,
                             clock=self.source.clock,
                             when='synapses',
@@ -152,7 +153,14 @@ class SynapticPathway(CodeRunner, Group):
                             name=synapses.name + '_' + objname,
                             template_kwds={'pathway': self})
 
-        self._pushspikes_codeobj = None
+        self._pushspikes_coderunner = CodeRunner(group=self,
+                                                 template='synapses_push_spikes',
+                                                 code='',
+                                                 clock=self.source.clock,
+                                                 when='synapses',
+                                                 order=order-1,
+                                                 name=self.name + '_push_spikes')
+        self.contained_objects.append(self._pushspikes_coderunner)
 
         self.spikes_start = self.source.start
         self.spikes_stop = self.source.stop
@@ -235,42 +243,7 @@ class SynapticPathway(CodeRunner, Group):
 
     @device_override('synaptic_pathway_before_run')
     def before_run(self, run_namespace=None, level=0):
-        # execute code to initalize the spike queue
-        if self._initialise_queue_codeobj is None:
-            self._initialise_queue_codeobj = create_runner_codeobj(self,
-                                                                   '', # no code,
-                                                                   'synapses_initialise_queue',
-                                                                   name=self.name+'_initialise_queue',
-                                                                   check_units=False,
-                                                                   additional_variables=self.variables,
-                                                                   run_namespace=run_namespace,
-                                                                   level=level+2)
-        self._initialise_queue_codeobj()
-        CodeRunner.before_run(self, run_namespace, level=level+2)
-
-        # we insert rather than replace because CodeRunner puts a CodeObject in updaters already
-        if self._pushspikes_codeobj is None:
-            # Since this now works for general events not only spikes, we have to
-            # pass the information about which variable to use to the template,
-            # it can not longer simply refer to "_spikespace"
-            # Strictly speaking this is only true for the standalone mode at the
-            # moment, since in runtime, all the template does is to call
-            # SynapticPathway.push_spike
-            eventspace_name = '_{}space'.format(self.event)
-            template_kwds = {'eventspace_variable': self.source.variables[eventspace_name]}
-            needed_variables= [eventspace_name]
-            self._pushspikes_codeobj = create_runner_codeobj(self,
-                                                             '', # no code
-                                                             'synapses_push_spikes',
-                                                             name=self.name+'_push_spikes',
-                                                             check_units=False,
-                                                             additional_variables=self.variables,
-                                                             needed_variables=needed_variables,
-                                                             template_kwds=template_kwds,
-                                                             run_namespace=run_namespace,
-                                                             level=level+2)
-
-        self._code_objects.insert(0, weakref.proxy(self._pushspikes_codeobj))
+        super(SynapticPathway, self).before_run(run_namespace, level=level+2)
 
     def initialise_queue(self):
         self.eventspace = self.source.variables[self.eventspace_name].get_value()
@@ -303,10 +276,12 @@ class SynapticPathway(CodeRunner, Group):
                         'synapses_dt_mismatch', once=True)
 
     def _store(self, name='default'):
+        super(SynapticPathway, self)._store(name=name)
         if self.queue is not None:
             self.queue._store(name)
 
     def _restore(self, name='default'):
+        super(SynapticPathway, self)._restore(name=name)
         if self.queue is not None:
             self.queue._restore(name)
 
@@ -1181,13 +1156,13 @@ class Synapses(Group):
             else:
                 abstract_code += '_real_targets = targets'
 
-            codeobj = create_runner_codeobj(self,
-                                            abstract_code,
-                                            'synapses_create_array',
-                                            additional_variables=variables,
-                                            check_units=False,
-                                            run_namespace=namespace,
-                                            level=level+1)
+            _, codeobj, _ = create_runner_codeobj(self,
+                                                  abstract_code,
+                                                  'synapses_create_array',
+                                                  additional_variables=variables,
+                                                  check_units=False,
+                                                  run_namespace=namespace,
+                                                  level=level+1)
             codeobj()
         else:
             abstract_code = '_pre_idx = _all_pre \n'
@@ -1228,13 +1203,13 @@ class Synapses(Group):
                     variable_indices[varname] = '_all_post'
             variable_indices['_all_pre'] = '_i'
             variable_indices['_all_post'] = '_j'
-            codeobj = create_runner_codeobj(self,
-                                            abstract_code,
-                                            'synapses_create',
-                                            variable_indices=variable_indices,
-                                            additional_variables=variables,
-                                            check_units=False,
-                                            run_namespace=namespace,
-                                            level=level+1)
+            _, codeobj, _ = create_runner_codeobj(self,
+                                                  abstract_code,
+                                                  'synapses_create',
+                                                  variable_indices=variable_indices,
+                                                  additional_variables=variables,
+                                                  check_units=False,
+                                                  run_namespace=namespace,
+                                                  level=level+1)
             codeobj()
 

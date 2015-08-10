@@ -139,7 +139,8 @@ class BrianObject(Nameable):
 
         TODO
         '''
-        pass
+        for obj in self.contained_objects:
+            obj.before_run(run_namespace=run_namespace, level=level+1)
     
     def after_run(self):
         '''
@@ -147,7 +148,8 @@ class BrianObject(Nameable):
         
         Called by `Network.after_run` after the main simulation loop terminated.
         '''
-        pass
+        for obj in self.contained_objects:
+            obj.after_run()
 
     def run(self):
         for codeobj in self._code_objects:
