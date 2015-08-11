@@ -168,6 +168,8 @@ libraries: {self.libraries}
                 self.namespace[self.device.get_array_name(var,
                                                             self.variables)] = value
                 self.namespace['_num'+name] = var.get_len()
+                if var.scalar and var.constant:
+                    self.namespace[name] = value[0]
             else:
                 self.namespace[name] = value
 
