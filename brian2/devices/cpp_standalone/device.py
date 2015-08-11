@@ -50,30 +50,6 @@ prefs.register_preferences(
     )
 
 
-def freeze(code, ns):
-    # this is a bit of a hack, it should be passed to the template somehow
-    for k, v in ns.items():
-
-        if (isinstance(v, Variable) and not isinstance(v, AttributeVariable) and
-              v.scalar and v.constant and v.read_only):
-            try:
-                v = v.get_value()
-            except NotImplementedError:
-                continue
-        if isinstance(v, basestring):
-            code = word_substitute(code, {k: v})
-        elif isinstance(v, numbers.Number):
-            # Use a renderer to correctly transform constants such as True or inf
-            renderer = CPPNodeRenderer()
-            string_value = renderer.render_expr(repr(v))
-            if v < 0:
-                string_value = '(%s)' % string_value
-            code = word_substitute(code, {k: string_value})
-        else:
-            pass  # don't deal with this object
-    return code
-
-
 class CPPWriter(object):
     def __init__(self, project_dir):
         self.project_dir = project_dir
@@ -142,6 +118,41 @@ class CPPStandaloneDevice(Device):
         
     def reinit(self):
         self.__init__()
+
+    def freeze(self, code, ns):
+        # this is a bit of a hack, it should be passed to the template somehow
+        for k, v in ns.items():
+
+            # This is not great, but in runtime mode we pass in the values of
+            # constants stored in scalar arrays (e.g. the total number of synapses)
+            # via the namespace to allow to use e.g. ``N`` instead of ``{{N}}[0]``
+            # and to make templates independent of whether ``N`` is a normal
+            # constant or a constant scalar array. We can't do this here, so we
+            # rather do an ugly bit of code re-writing, replacing the variable
+            # name by the array expression
+            if (isinstance(v, ArrayVariable) and v.scalar):
+                arr_name = self.get_array_name(v)
+                code = word_substitute(code, {k: '%s[0]' % arr_name})
+                continue
+
+            if (isinstance(v, Variable) and not isinstance(v, AttributeVariable) and
+                  v.scalar and v.constant and v.read_only):
+                try:
+                    v = v.get_value()
+                except NotImplementedError:
+                    continue
+            if isinstance(v, basestring):
+                code = word_substitute(code, {k: v})
+            elif isinstance(v, numbers.Number):
+                # Use a renderer to correctly transform constants such as True or inf
+                renderer = CPPNodeRenderer()
+                string_value = renderer.render_expr(repr(v))
+                if v < 0:
+                    string_value = '(%s)' % string_value
+                code = word_substitute(code, {k: string_value})
+            else:
+                pass  # don't deal with this object
+        return code
 
     def insert_code(self, slot, code):
         '''
@@ -597,7 +608,7 @@ class CPPStandaloneDevice(Device):
         for codeobj in self.code_objects.itervalues():
             ns = codeobj.variables
             # TODO: fix these freeze/CONSTANTS hacks somehow - they work but not elegant.
-            code = freeze(codeobj.code.cpp_file, ns)
+            code = self.freeze(codeobj.code.cpp_file, ns)
             code = code.replace('%CONSTANTS%', '\n'.join(code_object_defs[codeobj.name]))
             code = '#include "objects.h"\n'+code
             
