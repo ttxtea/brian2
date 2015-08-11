@@ -124,7 +124,7 @@ class CythonCodeObject(NumpyCodeObject):
                                                             self.variables)] = value
                 self.namespace['_num'+name] = var.get_len()
                 if var.scalar and var.constant:
-                    self.namespace[name] = value[0]
+                    self.namespace[name] = value.item()
             else:
                 self.namespace[name] = value
 
